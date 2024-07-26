@@ -2,6 +2,65 @@ Kafka - how to install and play with it
 ==========================================
 
 
+```
+https://github.com/christianb93/kafka
+
+sudo apt update 
+sudo apt install -y \
+  libvirt-daemon \
+  libvirt-clients \
+  virt-manager \
+  python3-pip \
+  python3-libvirt \
+  vagrant \
+  vagrant-libvirt \
+  git
+sudo adduser $(id -un) libvirt
+sudo adduser $(id -un) kvm
+
+sudo apt install -y ansible aptitude dh-python
+
+# python3.11-venv
+sudo aptitude search python|cut -c4-|awk '{print $1}'|grep -E "^python.*venv$"|xargs sudo apt install -y
+
+# openjdk
+openjdk=$(sudo aptitude search openjdk|cut -c4-|awk '{print $1}'|grep -E "^openjdk.*jdk$"|head -1)
+echo $openjdk
+sudo apt install -y $openjdk 
+
+# libvirt module
+sudo aptitude search libvirt|cut -c4-|awk '{print $1}'|grep -E "^libvirt"|grep -Ev "(libvirt-daemon-system-systemd)"|xargs sudo apt install -y
+
+
+python3 -m venv env
+source ~/env/bin/activate
+pip3 install ansible lxml pyopenssl
+
+wget http://mirror.cc.columbia.edu/pub/software/apache/kafka/2.4.1/kafka_2.13-2.4.1.tgz
+tar xvf kafka_2.13-2.4.1.tgz
+mv kafka_2.13-2.4.1 kafka
+
+git clone https://github.com/christianb93/kafka.git
+cd kafka
+
+kafkatgz=$(curl --silent https://kafka.apache.org/downloads | html2text |grep -E Scala.*kafka.*gz|tr ' ' "\n"|grep kafka|head -3|sort|tail -1)
+echo $kafkatgz
+URL=$(curl --silent https://kafka.apache.org/downloads|grep $kafkatgz|tr '"' "\n"|grep -E $kafkatgz$)
+echo $URL
+wget $URL
+tar xzf $kafkatgz
+mv ${kafkatgz%.tgz} kafka
+
+virsh net-define kafka-private-network.xml
+vagrant box list | cut -f 1 -d ' ' | xargs -L 1 vagrant box remove -f
+vagrant up
+source ~/env/bin/activate
+pip install ansible libvirt-python
+LC_ALL=C.UTF-8 LANG=C.UTF-8 ansible-playbook site.yaml
+
+```
+
+
 # Running the installation
 
 First, you need to make sure that you have Ansible, Vagrant and the vagrant-libvirt plugin installed. Here are the instructions to do this on an Ubuntu based system.
